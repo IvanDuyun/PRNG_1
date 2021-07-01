@@ -1,0 +1,247 @@
+unit Unit4;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls, VclTee.TeeGDIPlus,
+  VCLTee.TeEngine, VCLTee.Series, Vcl.ExtCtrls, VCLTee.TeeProcs, VCLTee.Chart;
+
+type
+  TForm4 = class(TForm)
+    Summat: TEdit;
+    Label1: TLabel;
+    Label2: TLabel;
+    SS: TEdit;
+    Label3: TLabel;
+    Button1: TButton;
+    Label4: TLabel;
+    Label5: TLabel;
+    Label6: TLabel;
+    Kolm: TEdit;
+    Pirs: TEdit;
+    Chart1: TChart;
+    Series1: TBarSeries;
+    Summat123: TMemo;
+    Button2: TButton;
+    Label7: TLabel;
+    Korrel: TEdit;
+    Label10: TLabel;
+    Label11: TLabel;
+    Edit1: TEdit;
+    Label8: TLabel;
+    Label9: TLabel;
+    Interv: TEdit;
+    procedure Button1Click(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  Form4: TForm4;
+
+  matr: array of array of integer;
+mas_summator: array of integer; //для хранения значений сумматоров
+NewEl, K_sum, i, s, chislo, k: integer;
+  vihod: array of integer;
+  chislo_max, chislo_min: integer; //значения для гистограммы
+
+  Koef_Korr: Double; //Коэффициент корреляции
+          mas_gist: array of integer; //экспер. частота
+       mas_p: array of real; //вероятность
+       Sr_Int: array of real;
+       Teor_Chast: array of real;  //для значений теоретических частот(пирсон)
+       Nakople_Teor_Chast: array of real;  //для накопленных значений теоретических частот(колмогоров)
+       Nakople_Mas_Gist: array of integer; //для накопленных значений эксперим частот(колмогоров)
+   f,size_int:real; //ширина интервала
+   j,intervalov: integer;
+   SR_KV_OTKL:real;//среднее квадратичное отклонение
+   Sr_Ar:real;     //среднее арифметич.
+   KOEF_OTKL:real;
+   Disp: real; //дисперсия
+   Par_A, Par_b: real; //параметры распределения a и b
+   FX: real;   //плотность распределения
+   Pirson: real;   //значение критерия Пирсона
+   Max_nakople: real; //макс разница между накопленными частотами(колмогоров)
+   Kolmogor: real; //значение критерия Колмогорова
+   F_Korr: real; //корреляционная фунция
+   Tau: integer; //задаваемый параметр для нахождения корр функции
+   Sum_1, Sum_2, Sum_3, Sum_4, Sum_5: real; //для нахождения корр функции
+   Disp_x, Disp_y: real; //Дисперсии сечений выборки
+   Znach_Koef_Korr: real; //Для проверки коэффициента корреляции
+
+
+implementation
+       uses  Unit2;
+{$R *.dfm}
+
+procedure TForm4.Button1Click(Sender: TObject);
+begin
+        ///считывание значения интервалов и указание длины динамических массивов
+  Intervalov:=strtoint(Interv.Text);
+  setlength(mas_gist, Intervalov);
+  setlength(mas_p, Intervalov);
+  setlength(Sr_Int, Intervalov);
+  setlength(Teor_Chast, Intervalov);
+  setlength(Nakople_Teor_Chast, Intervalov);
+  setlength(Nakople_Mas_Gist, Intervalov);
+
+K_sum:=strtoint(Summat.Text);
+
+setlength(mas_summator, K_sum);
+
+    //считывание значений ссуматоров
+   for i:=0 to K_sum-1 do
+   begin
+   mas_summator[i]:= strtoint(Summat123.Lines[i]);
+   end;
+
+ S:=strtoint(SS.Text);
+
+     setlength(vihod,s);      //выделяем память для выходного массива(последние элементы созданной матрицы)
+     setlength(matr,s,mas_summator[0]);  //выделяем память для будущей матрицы
+
+  ///заполнение строки инициализации
+  chislo:=21;
+  for i:=0 to mas_summator[0]-1 do begin
+     chislo:=(106*chislo+1283) mod 6075;
+      matr[0,i]:=chislo end;
+
+  ///начинается алгоритм
+  for  i:=1 to s-1 do begin
+
+   NewEl:=matr[i-1, mas_summator[0]-1];
+   for k:=1 to K_sum-1 do begin
+     NewEl:= NewEl xor matr[i-1, mas_summator[k]-1];
+   end;
+
+      for var j:=1 to mas_summator[0]-1 do begin
+         matr[i,j]:=matr[i-1,j-1] end;
+      matr[i,0]:=NewEl;
+      vihod[0]:=matr[0,mas_summator[0]-1];
+      vihod[i]:=matr[i,mas_summator[0]-1];
+   end;
+
+   ///поиск минимума и максимума
+   chislo_min:=1000000;
+   for  i:=0 to s-1 do begin
+   if vihod[i]>chislo_max then chislo_max:=vihod[i];
+   if vihod[i]<chislo_min then chislo_min:=vihod[i];
+   end;
+
+   ///вывод массива
+  //  for i:=0 to s-1 do
+//    begin
+ //    var Str:='';
+ //    for var j:=0 to mas_summator[0]-1 do
+  //     Str:=Str+IntToStr(Matr[i,j])+' ';
+ //    Memo2.Lines.Add(Str);
+  //  end;
+
+   //mas_gist:=new integer[intervalov];
+   ///заполняем интервалы
+   size_int := (chislo_max-chislo_min)/intervalov;
+   f:=0;
+   for j:=0 to intervalov-1 do begin
+     for i:=0 to s-1 do  begin
+       if (vihod[i]>f) and (vihod[i]<=f+size_int) then mas_gist[j]:=mas_gist[j]+1 end;
+   f:=f+size_int
+   end;
+     ///находим среднее значения интервалов(Sr_Int)
+   Sr_Int[0]:=size_int/2; //первое среднее
+   for i:=1 to intervalov-1 do begin
+   Sr_Int[i]:=size_int+Sr_Int[i-1] end;
+
+     ///находим выборочную среднюю (Sr_Ar)
+   for i:=0 to intervalov-1 do begin
+     Sr_Ar:=Sr_Ar+Sr_Int[i]*mas_gist[i] end;
+     Sr_Ar:=Sr_Ar/s;
+
+     ///находим  выборочную дисперсию(Disp)
+   for i:=0 to intervalov-1 do begin
+     Disp:=Disp + mas_gist[i]*Sqr(Sr_Int[i] - Sr_Ar) end;
+     Disp:=Disp/s;
+
+     ///находим выборочное среднеквадратичное отклонение(SR_KV_OTKL)
+     SR_KV_OTKL:=Sqrt(Disp);
+
+     ///находим параметры распределения (Par_A, Par_b)
+     Par_A:=Sr_Ar - Sqrt(3)*SR_KV_OTKL;
+     Par_B:=Sr_Ar + Sqrt(3)*SR_KV_OTKL;
+
+     ///находим предполагаемую плотность распределения Fx
+     FX:=1/(Par_b-Par_A);
+
+     ///находим теоретические частоты (первое и последнее значения считаются отдельно)
+     Teor_Chast[0]:=s*(chislo_min + size_int - Par_A)*FX;
+     Teor_Chast[Intervalov-1]:=s*(Par_b - (chislo_max - size_int))*FX;
+     for i:=1 to intervalov-2 do begin
+       Teor_Chast[i]:=s*(Sr_Int[i+1] - Sr_Int[i])*FX  end;
+
+     ///Находим значение критерия Пирсона
+     for i:=0 to intervalov-1 do begin
+     Pirson:=Pirson + Sqr(mas_gist[i] -  Teor_Chast[i])/Teor_Chast[i] end;
+ ///создаем массивы с накопленными частотами(теор и практич) и находим максимульную разницу между накопленными частотами
+     Nakople_Mas_Gist[0]:=Mas_Gist[0];
+     Nakople_Teor_Chast[0]:=Teor_Chast[0];
+     Max_nakople:=Nakople_Mas_Gist[0] - Nakople_Teor_Chast[0]; //начальный максимум
+     for i:=1 to intervalov-1 do begin
+       Nakople_Mas_Gist[i]:=Nakople_Mas_Gist[i-1]+Mas_Gist[i];
+       Nakople_Teor_Chast[i]:=Nakople_Teor_Chast[i-1]+Teor_Chast[i];
+       if Nakople_Mas_Gist[i] - Nakople_Teor_Chast[i] > Max_nakople then Max_nakople:=Nakople_Mas_Gist[i] - Nakople_Teor_Chast[i]
+     end;
+     Kolmogor:=Max_nakople/Sqrt(S);
+
+     ///Находим корреляционную функцию (F_Korr)
+     Tau:=3;
+     for i:=0 to s-Tau-1 do begin
+       ///Суммы для корр. функции
+       Sum_1:=Sum_1 + vihod[i]*vihod[i+Tau];
+       Sum_2:=Sum_2 + vihod[i];
+       Sum_3:=Sum_3 + vihod[i+Tau];
+       ///Суммы для дисперсии сечений выборки
+       Sum_4:=Sum_4 + Sqr(vihod[i]);
+       Sum_5:=Sum_5 + Sqr(vihod[i+Tau]);
+     end;
+     ///Находим значение корр. функции (F_Korr)
+     F_Korr:= (1/(S-Tau))*Sum_1 - (1/Sqr(S-Tau))*Sum_2*Sum_3;
+     ///Находим значения дисперсий Disp_x и Disp_y
+     Disp_x:= (1/(S-Tau))*Sum_4 - (1/Sqr(S-Tau))*Sqr(Sum_2);
+     Disp_y:= (1/(S-Tau))*Sum_5 - (1/Sqr(S-Tau))*Sqr(Sum_3);
+         ///Находим коэфф. корреляции (Koef_Korr)
+     Koef_Korr:=ABS(F_Korr/Sqrt(Disp_x*Disp_y));
+   ///Для проверки коэфф. корреляции (при вероятности p=0.95)
+     Znach_Koef_Korr:= (1-0.05)*Sqrt(1/S);
+
+    // Writeln('Коэффициент корреляции:  ',Koef_Korr);
+   //  Writeln('Проверка коэффициента корреляции:  ',Znach_Koef_Korr);
+   //  Writeln('Колмогорov:  ',Kolmogor);
+  //  Writeln('теор частота:  ', Teor_Chast);
+ //   Writeln('a:  ', Par_A);
+ //    Writeln('b:  ', Par_B);
+  //  Writeln('Пирсон:  ', Pirson);
+  //   Writeln('fx:  ', FX);
+  //  Writeln(mas_gist);
+   Kolm.Text:= FloatToStr(Kolmogor);
+    Pirs.Text:= FloatToStr(Pirson);
+   Korrel.Text:= FloatToStr(Koef_Korr);
+   edit1.Text:= FloatToStr(Znach_Koef_Korr);
+   ///заполнение гистограммы
+        for I := 0 to Intervalov-1 do  begin
+        Series1.Add(mas_gist[i]);
+        end;
+
+end;
+
+
+
+
+
+
+
+
+
+
+end.

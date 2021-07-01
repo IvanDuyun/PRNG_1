@@ -1,0 +1,105 @@
+unit Unit3;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.StdCtrls;
+
+type
+  TForm3 = class(TForm)
+    Label1: TLabel;
+    Label2: TLabel;
+    Label4: TLabel;
+    Label3: TLabel;
+    Label5: TLabel;
+    Label6: TLabel;
+    SSS: TEdit;
+    Button1: TButton;
+    chislo1: TEdit;
+    Edit3: TEdit;
+    Edit4: TEdit;
+    Edit5: TEdit;
+    Memo1: TMemo;
+    Label7: TLabel;
+    Label8: TLabel;
+    Par_A: TEdit;
+    Par_C: TEdit;
+    Label9: TLabel;
+    Par_M: TEdit;
+    Label10: TLabel;
+    procedure Button1Click(Sender: TObject);
+//    procedure Label2Click(Sender: TObject);
+//    procedure FormCreate(Sender: TObject);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  Form3: TForm3;
+  A, M, C: integer;
+  n: integer;  //количество чисел
+  chislo: real;
+  s1: string;
+  s2,s3: string;
+  i,otstup,razryad,s: integer;
+  vihod: array of integer;
+  Koef_Korr: Double; //Коэффициент корреляции
+       mas_gist: array[0..29] of integer; //экспер. частота
+       mas_p: array[0..29] of real; //вероятность
+       Sr_Int: array[0..29] of real;
+       Teor_Chast: array[0..29] of real;  //для значений теоретических частот(пирсон)
+       Nakople_Teor_Chast: array[0..29] of real;  //для накопленных значений теоретических частот(колмогоров)
+       Nakople_Mas_Gist: array[0..29] of integer; //для накопленных значений эксперим частот(колмогоров)
+   f,size_int:real; //ширина интервала
+   j,intervalov: integer;
+   SR_KV_OTKL:real;//среднее квадратичное отклонение
+   Sr_Ar:real;     //среднее арифметич.
+   KOEF_OTKL:real;
+   Disp: real; //дисперсия
+   Par_A, Par_b: real; //параметры распределения a и b
+   FX: real;   //плотность распределения
+   Pirson: real;   //значение критерия Пирсона
+   Max_nakople: real; //макс разница между накопленными частотами(колмогоров)
+   Kolmogor: real; //значение критерия Колмогорова
+   F_Korr: real; //корреляционная фунция
+   Tau: integer; //задаваемый параметр для нахождения корр функции
+   Sum_1, Sum_2, Sum_3, Sum_4, Sum_5: real; //для нахождения корр функции
+   Disp_x, Disp_y: real; //Дисперсии сечений выборки
+   Znach_Koef_Korr: real; //Для проверки коэффициента корреляции
+
+
+
+implementation
+
+{$R *.dfm}
+
+
+
+
+
+
+
+procedure TForm3.Button1Click(Sender: TObject);
+begin
+
+ S:=strtoint(SSS.Text);
+chislo:=strtofloat(chislo1.Text);
+A:= strtoint(Par_A.Text);
+C:= strtoint(Par_C.Text);
+M:= strtoint(Par_M.Text);
+
+setlength(vihod,s);
+
+  for i:=0 to s-1 do begin
+    chislo:=(A*chislo+c) mod m;
+      vihod[i]:=chislo end;
+
+   for I := 0 to s-1 do  begin
+        Memo1.Lines.Add(IntToStr(vihod[i]));
+                            end;
+end;
+
+end.
